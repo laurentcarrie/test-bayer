@@ -4,7 +4,11 @@ distlib==0.3.1
 filelock==3.0.12
 identify==1.5.10
 nodeenv==1.5.0
+numpy==1.19.4
+pandas==1.1.4
 pre-commit==2.9.2
+python-dateutil==2.8.1
+pytz==2020.4
 PyYAML==5.3.1
 six==1.15.0
 toml==0.10.2
