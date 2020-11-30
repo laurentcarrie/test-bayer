@@ -1,0 +1,30 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.3.0  # Use the ref you want to point at
+    hooks:
+    -   id: trailing-whitespace
+    -   id: check-ast
+    -   id: check-builtin-literals
+    -   id: check-byte-order-marker
+    -   id: check-case-conflict
+    -   id: check-docstring-first
+    -   id: check-merge-conflict
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+    -   id: check-json
+        exclude: Data-Engineer-Case/data/.*
+
+-   repo: https://github.com/pre-commit/mirrors-autopep8
+    rev: 'v1.5.4'  # Use the sha / tag you want to point at
+    hooks:
+    -   id: autopep8
+
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: '3.8.4'  # Use the sha / tag you want to point at
+    hooks:
+    - id: flake8
+
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: ''  # Use the sha / tag you want to point at
+    hooks:
+    -   id: mypy
