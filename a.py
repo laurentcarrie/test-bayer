@@ -6,36 +6,20 @@ import pandas as pd
 import numpy as np
 import datetime
 import traceback
-from functools import wraps
+from mychecks import expect_columns
 
 
 here = Path(__file__).parent
 
+SNAFFLELAX = 'Snafflelax'
 
 product_name_aliases = {
     'Globberin': ['Globbrin', 'Globberin', 'Globberin'],
-    'Snafflelax': ['Snaffleflax', 'Snafulopromazide-b (Snaffleflax)'],
+    SNAFFLELAX: ['Snaffleflax', 'Snafulopromazide-b (Snaffleflax)'],
     'Vorbulon': ['Vorbulon', 'vorbulon.'],
     'Beeblizox': ['Beebliz%C3%B6x', 'Beeblizox']
 }
 
-def expect_columns(input,output):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(df,*args,**kwargs):
-            column_names = set([c for c in df.head()])
-            for column_name in input:
-                if not column_name in column_names:
-                    raise ValueError(f"this function was provided a dataframe which does not respect the contract : column {column_name} not found in input")
-            df = func(df,*args,**kwargs)
-            column_names = [df.index.name] + [c for c in df.head()]
-            if output :
-                for column_name in output:
-                    if not column_name in column_names:
-                        raise ValueError(f"this function outputs a dataframe which does not respect the contract : column {column_name} not found in output")
-            return df
-        return wrapper
-    return decorator
 
 
 def normalize_product_name(name):
@@ -97,14 +81,12 @@ def df_sum_of_sales(df):
     for key in product_name_aliases.keys():
         df = df.drop(f"unit_sales_{key}", axis=1)
 
-    # for debugging the exercise
-    df.to_csv(str(here / "sums.csv"))
-
     return df
 
 
 
-def f():
+@expect_columns(input=None,output=['acct_id','date','market_share'])
+def df_market_share():
 
     df_event = pd.read_csv(str(here/ "Data-Engineer-Case" /"data"/"crm_data.csv"))
 
@@ -115,47 +97,34 @@ def f():
 
     # we fix the names, by trying to replace known typos
     # this will raise an exception if a name cannot be fixed
+    # the product names are categorized, the values are product_name_aliases.keys()
     df.product_name = df.product_name.map(normalize_product_name)
 
+    # for debug and discuss
+    df.to_csv("brut.csv")
 
 
     sum_per_month = df_sum_of_sales(df)
 
+    # for debugging and discussing the exercise
+    sum_per_month.to_csv(str(here / "sums.csv"))
 
-    def share_of_acct(df):
-        df = df[df.product_name == 'Snafflelax']
-        #df = df.drop(labels=['product_name'],axis=1)
-        df = df.groupby(['date']).sum()
-        df.to_csv("share0.csv")
-        return df
+    # in the sales data, we are only interested in SNAFFLELAX sales
+    df = df[df.product_name == SNAFFLELAX]
 
-
-    df_share = share_of_acct(df)
-    df.to_csv("brut.csv")
-
-    def toto(df):
-        df = df.drop(labels=['created_at'], axis=1)
-        df = pd.pivot_table(df, index=['acct_id','date'], columns=['product_name'], values=['unit_sales'], aggfunc=np.sum)
-        df.columns = list(map("_".join, df.columns))
-        df = df.filter(items=['acct_id','date','unit_sales_Snafflelax']).dropna()
-        df.to_csv("out.csv")
-
-    toto(df)
-
-    #df = df.drop(labels=['created_at'], axis=1)
-    df = df[df.product_name == 'Snafflelax']
+    # we add a column : for this month, the total of sales
     df['all_sums'] = df['date'].apply(lambda x : sum_per_month['all_product_unit_sales'][x]).fillna(0)
-    #df['all_sums'] = df['all_sums'].apply(lambda x : sum_per_month['all_product_unit_sales'][x])
-    #df = df.drop(labels=['product_name'],axis=1)
-    df = df.groupby(['acct_id','date']).sum()
-    #df = df.merge(right=sum_per_month , how='right', left_on='date', right_on='date')
-    #df['market_share'] = df['unit_sales'] / sum_per_month['all_product_unit_sales'][df['date']]
+
+    # to get the market share
     df['market_share'] = df['unit_sales'] / df['all_sums']
 
+    # clean up
+    df = df.drop(labels=['product_name','created_at','unit_sales','all_sums'],axis=1)
+    # to debug and discuss
     df.to_csv("share.csv")
 
 
-    return
+    return df
 
 
 
@@ -182,7 +151,7 @@ def g():
 
 if __name__ == "__main__":
     try:
-        f()
+        df_market_share()
         #g()
     except Exception :
         traceback.print_exc()
