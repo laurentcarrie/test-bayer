@@ -86,7 +86,7 @@ def df_sum_of_sales(df:pd.DataFrame) -> pd.DataFrame:
 
 
 
-@expect_columns(input=None,output=['acct_id','date','market_share'])
+#@expect_columns(input=None,output=['acct_id','date','market_share'])
 def build_df_market_share() -> pd.DataFrame:
 
     # read all json files.
@@ -111,14 +111,31 @@ def build_df_market_share() -> pd.DataFrame:
     # in the sales data, we are only interested in SNAFFLELAX sales
     df = df[df.product_name == SNAFFLELAX]
 
+    df.date = df.date.map(np.datetime64)
+
+    df = df[df.acct_id == '933bc0ad-9764-4035-abf8-f8fb3ebeeaff']
+    df = df.drop(labels=['acct_id','product_name','created_at'],axis=1)
+
+    df = pd.merge(df,sum_per_month,on='date',how='outer').fillna(0)
+    df = df.set_index(df.date)
+    df = df.sort_index()
+
+    #df['xmonth'] = df.unit_sales.rolling(window=3,min_periods=1).mean().fillna(0)
+    df['x_mean_unit_sales'] = df.unit_sales.rolling(window=4).mean().fillna(0)
+    df.to_csv('toto.csv')
+
     # we add a column : for this month, the total of sales
-    df['all_sums'] = df['date'].apply(lambda x : sum_per_month['all_product_unit_sales'][x]).fillna(0)
+    #
+    #df['all_sums'] = df['date'].apply(lambda x : sum_per_month['all_product_unit_sales'][x]).fillna(0)
 
     # to get the market share
-    df['market_share'] = df['unit_sales'] / df['all_sums']
+    df['market_share'] = df['unit_sales'] / df['all_product_unit_sales']
+    df['x_mean_market_share'] = df['x_mean_unit_sales'] / df['all_product_unit_sales']
+    df.to_csv('toto.csv')
 
     # clean up
-    df = df.drop(labels=['product_name','created_at','unit_sales','all_sums'],axis=1)
+    #df = df.drop(labels=['product_name','created_at','unit_sales','all_sums'],axis=1)
+    #df = df.drop(labels=['product_name','created_at','all_sums'],axis=1)
 
     return df
 
@@ -150,7 +167,7 @@ if __name__ == "__main__":
         df_crm = build_df_crm()
         df_crm.to_csv('crm.csv')
 
-        df_join = pd.merge(df_ms,df_crm,on=["acct_id","date"])
-        df_join.to_csv('join.csv')
+        #df_join = pd.merge(df_ms,df_crm,on=["acct_id","date"])
+        #df_join.to_csv('join.csv')
     except Exception :
         traceback.print_exc()
