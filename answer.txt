@@ -1,0 +1,4 @@
+The dataset could be enhanced with :
+- knowledge of crm done by competitors
+- knowledge of allergy, by allergy survey data : drug sales are likely to be very dependendant on this missing variable
+- if no data known for allergy, replace by possible causes of allergy, such as weather reports,...
